@@ -166,54 +166,298 @@ Comparación entre al menos dos grupos relevantes:
 
 Se entrena un modelo para **predecir la probabilidad de que un pedido reciba una calificación baja (1–2 estrellas)** a partir de las variables del pedido. La variable objetivo es binaria (`baja_satisfaccion = 1 si review_score ≤ 2`), y las predictoras incluyen `delivery_time`, `price`, `freight_value`, categoría y las variables de enriquecimiento temporal.
 
-> `[COMPLETAR: indicar el modelo finalmente usado (regresión logística, árbol de decisión, Random Forest o XGBoost), justificar la elección y describir el tratamiento del desbalance de clases —las reseñas 1–2★ son minoría—, por ejemplo con SMOTE o class_weight.]`
+El análisis consideró 95,824 pedidos entregados que contaban con información de entrega y calificación. Dentro de esta muestra, 12,272 pedidos, equivalentes al 12.81%, presentaron baja satisfacción. Debido a que las reseñas de 1 y 2 estrellas son minoría, el problema presenta desbalance de clases.
+
+Variables predictoras utilizadas
+  Las variables incorporadas en el modelo fueron agrupadas en cuatro bloques:
+
+| Bloque | Variables |
+|---|---|
+| Logística | `[delivery_time`, `estimated_delivery_days`, `days_to_approval`, `freight_value`, `ratio flete/precio]` 
+|Precio y pedido| `[price]`, número de productos, número de cuotas, peso del producto, cantidad de fotos |
+| Producto y ubicación | categoría, estado del cliente, tipo de pago | 
+| Contexto temporal | mes de compra, día de la semana, periodo Black Friday y periodo navideño |
+
+El indicador exacto is_holiday no se incluyó directamente porque no presentaba variación útil en la tabla final. En su lugar, se utilizaron variables temporales que sí permiten capturar estacionalidad y periodos comerciales de alta demanda, como el mes de compra, Black Friday y Navidad.
+
+También se debe precisar que el dataset no contiene una calificación histórica directa del vendedor. Por esta razón, no se utilizó una “calificación del vendedor” como predictor. En una futura versión del modelo se recomienda crear un score histórico del vendedor utilizando únicamente información previa al pedido, por ejemplo: tasa de retrasos anteriores, satisfacción histórica promedio y volumen de ventas reciente.
+
+Modelo seleccionado
+
+| Modelo | AUC ROC | Precision | Recall | F1-score |
+|---|---|---|---|---|
+| Regresión logística balanceada | 0.6974 | 0.2738 | 0.3811 | 0.3186 
+| Random Forest balanceado | 0.6998 | 0.3241 | 0.3881 | 0.3532
+
+El modelo seleccionado fue Random Forest Classifier con balanceo de clases.
+
+  La elección se justifica porque obtuvo mejores resultados que la regresión logística en precisión, recall y F1-score. Además, Random Forest permite capturar relaciones no lineales, especialmente relevantes en este caso, ya que el riesgo de una mala calificación no aumenta de forma constante: se incrementa con fuerza cuando el tiempo de entrega supera determinados umbrales.
+
+Para atender el desbalance de clases se utilizó:
+
+class_weight = "balanced_subsample"
+
+Esta técnica asigna mayor peso a los pedidos con baja satisfacción durante el entrenamiento. No se aplicó SMOTE, ya que el uso de pesos de clase permite preservar los registros reales y evita generar combinaciones sintéticas poco realistas entre variables numéricas y categóricas.
+
+Validación temporal
+La validación se realizó mediante una separación temporal para simular un escenario real de negocio:
+
+| Conjunto | Periodo de compra | Pedidos | 
+|---|---|---|
+| Entrenamiento | Antes del 1 de abril de 2018 | 63,818 
+| Prueba | Desde el 1 de abril de 2018 | 32,006 
+
+Este enfoque evita entrenar el modelo con información futura y permite evaluar si los patrones aprendidos en pedidos pasados se mantienen en pedidos posteriores.
 
 ### 5.2 Métricas de desempeño
 
-> `[COMPLETAR: reportar las métricas reales del modelo e interpretarlas en lenguaje de negocio.]`
-
-| Métrica | Valor | Qué significa para el negocio |
+| Métrica | Valor | Interpretación para el negocio |
 |---|---|---|
-| Accuracy | `[COMPLETAR]` | `[COMPLETAR]` |
-| Precision (clase insatisfecho) | `[COMPLETAR]` | De cada 100 pedidos que el modelo marca como riesgo, cuántos lo son realmente |
-| Recall (clase insatisfecho) | `[COMPLETAR]` | De cada 100 clientes que se van a quejar, cuántos detectamos a tiempo |
-| F1 / AUC | `[COMPLETAR]` | Capacidad global de distinguir clientes satisfechos de insatisfechos |
+| Accuracy | `85.26%` | El modelo clasifica correctamente la mayoría de los pedidos. Sin embargo, esta métrica debe interpretarse con cautela porque los pedidos con baja satisfacción son minoría. |
+| Precision, clase insatisfecho | `32.41%` | De cada 100 pedidos que el modelo marca como de alto riesgo, aproximadamente 32 realmente terminan con una calificación de 1 o 2 estrellas. |
+| Recall, clase insatisfecho | `38.81%` | De cada 100 pedidos que efectivamente reciben una mala calificación, el modelo identifica cerca de 39 antes de la reseña. |
+| F1-score | `35.32%` | El modelo logra un equilibrio moderado entre detectar clientes insatisfechos y evitar demasiadas alertas falsas. |
+| AUC ROC | `69.98%` | El modelo tiene una capacidad aceptable para distinguir entre pedidos con mayor y menor riesgo de baja satisfacción. |
+| Average Precision | `30.73%` | El modelo mejora de forma importante la priorización de pedidos riesgosos frente a una selección aleatoria. |
+
+La tasa real de baja satisfacción en el conjunto de prueba fue de aproximadamente 10.37%. En cambio, dentro de los pedidos clasificados como de mayor riesgo, la tasa de baja satisfacción fue considerablemente más alta.
+
+Esto demuestra que el modelo no debe utilizarse como una decisión automática definitiva, sino como una herramienta de priorización para enfocar la atención de operaciones y servicio al cliente en los pedidos más vulnerables.
 
 ### 5.3 Interpretación de resultados
 
-> `[COMPLETAR: traducir la salida del modelo a negocio. Insertar el gráfico de feature importance y responder: ¿qué variable predice más la baja satisfacción? ¿cuántos pedidos del total caen en zona de riesgo? ¿qué magnitud tiene el efecto del tiempo de entrega?]`
+El modelo confirma que sí es posible identificar un perfil de pedido con mayor probabilidad de baja satisfacción. Los pedidos más riesgosos suelen combinar tiempos de entrega prolongados, flete elevado, plazos prometidos largos, mayor peso del producto y determinadas categorías o ubicaciones geográficas.
+Las variables con mayor importancia en el modelo fueron las siguientes:
 
-**Narrativa esperada (a confirmar):** se anticipa que el **tiempo de entrega será la variable más importante** del modelo, por encima del precio y la categoría, reforzando los hallazgos descriptivos y diagnósticos. Esto permitiría a Olist **anticipar qué pedidos en curso tienen alto riesgo de mala calificación** y actuar antes de que el cliente reseñe.
+| Variable | Importancia estimada | 
+|---|---|
+| Tiempo real de entrega (delivery_time) | 47.8% 
+| Valor del flete | 8.2%
+| Número de ítems del pedido | 6.9%
+| Días estimados de entrega | 5.3%
+| Ratio flete / precio | 5.2%
+| Precio del pedido | 5.0%
+| Peso del producto | 5.0%
+| Categoría del producto | 3.6%
+| Mes de compra | 3.5%
+| Estado del cliente | 2.9%
+
+El resultado más relevante es que el tiempo de entrega representa aproximadamente el 47.8% de la importancia predictiva total del modelo. Esto confirma que la logística es el principal factor asociado a la baja satisfacción, por encima del precio, la categoría o el contexto temporal.
+
+Magnitud del efecto del tiempo de entrega
+La relación entre tiempo de entrega y riesgo de recibir una calificación baja es clara:
+
+| Tiempo de entrega | Pedidos | Porcentaje con calificación 1–2 estrellas |
+|---|---|---|
+| 0 a 3 días | 8,565 | 7.1%
+| 4 a 7 días | 24,974 | 7.1%
+| 8 a 10 días | 18,300 | 8.9%
+| 11 a 14 días | 17,890 | 9.7%
+| 15 a 21 días | 15,264 | 12.5%
+| 22 a 30 días | 6,824 | 27.2%
+| Más de 30 días | 4,007 | 65.3%
+
+Los pedidos entregados en un plazo de hasta 14 días presentan una tasa de baja satisfacción de aproximadamente 8.5%. En contraste, cuando la entrega supera los 30 días, el riesgo aumenta a 65.3%.
+
+Esto representa una diferencia de aproximadamente 56.8 puntos porcentuales y un riesgo casi 7.7 veces mayor frente a un pedido entregado dentro de los primeros 14 días.
+
+Por lo tanto, se identifican dos umbrales operativos relevantes:
+
+    1).15 días: umbral preventivo, ya que la baja satisfacción comienza a crecer de manera sostenida.
+    2).22 días: umbral crítico, ya que el riesgo se eleva a más del doble respecto a entregas menores a 15 días.
+    3).Más de 30 días: zona de riesgo extremo, donde cerca de dos de cada tres pedidos terminan con una calificación de 1 o 2 estrellas.
+
+Zona de alto riesgo
+Para convertir la predicción en una herramienta operativa, se definió como zona de alto riesgo al 10% de pedidos con mayor probabilidad estimada de baja satisfacción.
+
+| Indicador de priorización | Resultado |
+|---|---|
+| Pedidos evaluados en el conjunto de prueba | 32,006
+| Pedidos ubicados en el top 10% de riesgo | 3,200 
+| Pedidos con baja satisfacción dentro del top 10% | 1,137 
+| Tasa de baja satisfacción dentro del top 10% | 35.5% 
+| Casos totales de baja satisfacción detectados por este grupo | 34.3%
+
+Esto significa que, revisando solamente el 10% de pedidos con mayor riesgo, Olist puede concentrar su atención en un grupo donde más de uno de cada tres pedidos termina con una calificación de 1 o 2 estrellas.
+
+Si este criterio se aplicara sobre el total de pedidos analizados, aproximadamente 9,582 pedidos entrarían en una zona de seguimiento prioritario.
+
+Conclusión predictiva
+La hipótesis H5 queda respaldada: existe un perfil de pedido con mayor probabilidad de terminar en baja satisfacción.
+
+El principal predictor es el tiempo de entrega. El modelo demuestra que los retrasos prolongados, especialmente los superiores a 22 días, aumentan de forma considerable el riesgo de recibir una calificación negativa.
+
+Por ello, el modelo puede ser utilizado para identificar pedidos que requieren intervención prioritaria. La utilidad no está en reemplazar al equipo de operaciones, sino en ordenar la atención: primero deben revisarse los pedidos con mayor probabilidad de generar insatisfacción, reclamos y una mala calificación.
+
+En términos de negocio, Olist debe pasar de una gestión reactiva, que actúa después de recibir una reseña negativa, a una gestión preventiva basada en riesgo logístico y probabilidad de baja satisfacción.
 
 ---
 
 ## 6. Nivel 4 – Analítica prescriptiva: ¿qué debe hacer Olist?
 
+El análisis prescriptivo transforma los hallazgos descriptivos, diagnósticos y predictivos en decisiones operativas concretas. El objetivo no es únicamente identificar qué factores explican una mala experiencia, sino determinar qué acciones debe implementar Olist para reducir la baja satisfacción antes de que el cliente deje una calificación negativa.
+
+Los escenarios presentados son simulaciones de impacto basadas en los promedios observados por segmento y en el desempeño del modelo predictivo. Por tanto, representan estimaciones de negocio que deben validarse posteriormente mediante una prueba piloto o experimento controlado.
+
 ### 6.1 Escenarios "¿qué pasaría si…?"
 
-> `[COMPLETAR: cuantificar al menos 2 escenarios con supuestos explícitos, apoyados en los coeficientes del modelo o en los promedios por segmento.]`
+**Escenario A – Reducir la cola de entregas críticas**
+El análisis diagnóstico identificó que la satisfacción empieza a deteriorarse de forma sostenida desde los 15 días de entrega y se vuelve crítica a partir de los 22 días. Los pedidos con más de 30 días representan la zona de mayor riesgo, ya que concentran una proporción muy alta de calificaciones de 1 y 2 estrellas.
 
-**Escenario A – Reducir la cola de retrasos extremos.**
-Supuesto: si Olist interviene los pedidos con `delivery_time` por encima del umbral crítico de H2 (los que hoy concentran las peores notas), reduciéndolos en un X%.
-Impacto estimado: `[COMPLETAR: proyección de incremento en el review_score promedio o en el % de reseñas 4–5★.]`
+Para este escenario, se consideran como pedidos críticos aquellos con un tiempo de entrega superior a 22 días.
 
-**Escenario B – Sistema de alerta temprana con el modelo predictivo.**
-Supuesto: si Olist usa el modelo de la Sección 5 para detectar el % de pedidos en riesgo y activa compensaciones o seguimiento proactivo.
-Impacto estimado: `[COMPLETAR: cuántos clientes insatisfechos se podrían recuperar y efecto esperado en recompra.]`
+| Indicador | Valor observado | 
+|---|---|
+| Pedidos con entrega entre 22 y 30 días | 6,824
+| Pedidos con entrega superior a 30 días | 4,007
+| Total de pedidos críticos, más de 22 días | 10,831
+| Tasa promedio de baja satisfacción en pedidos críticos | 41.3%
+| Satisfacción promedio, 4–5 estrellas, en pedidos críticos | 46.5%
+| Rating promedio estimado de pedidos críticos | 5.0%
+| Peso del producto | 3.00
+| Tasa de baja satisfacción en entregas de 15 a 21 días | 12.5%
+| Satisfacción promedio, 4–5 estrellas, en entregas de 15 a 21 días | 3.5%
+| Estado del cliente | 77.4%
+| Rating promedio de entregas de 15 a 21 días | 4.10
+
+Supuesto del escenario
+Se asume que Olist implementa mejoras logísticas y logra reducir en 25% la cantidad de pedidos que actualmente supera el umbral crítico de 22 días.
+
+Se asume además que los pedidos recuperados alcanzan un desempeño similar al segmento de entregas de 15 a 21 días.
+
+Impacto estimado
+
+| Resultado esperado | Cálculo | Impacto |
+|---|---|---|
+| Malas calificaciones evitadas, 1–2 estrellas | 2,708 × (41.3% - 12.5%) | 780 pedidos aproximadamente
+| Reseñas satisfactorias adicionales, 4–5 estrellas | 2,708 × (77.4% - 46.5%) | 837 pedidos aproximadamente
+| Mejora del review score en los pedidos intervenidos | 4.10 - 3.00 | +1.10 puntos
+| Mejora estimada del review score promedio global | Impacto ponderado sobre 95,824 pedidos | +0.03 puntos aproximadamente
+
+Interpretación de negocio
+
+Reducir una cuarta parte de los pedidos que superan los 22 días permitiría evitar aproximadamente 780 experiencias de baja satisfacción y generar alrededor de 837 reseñas adicionales de 4 o 5 estrellas.
+
+Aunque una mejora global de 0.03 puntos en el review score promedio puede parecer pequeña, su relevancia está en que se concentra en los clientes con peor experiencia. Es decir, la intervención no busca modificar marginalmente a todos los clientes, sino recuperar los casos de mayor riesgo reputacional, mayor probabilidad de reclamo y peor percepción del servicio.
+
+**Escenario B – Sistema de alerta temprana con el modelo predictivo**
+
+El modelo Random Forest identificó que el 10% de pedidos con mayor probabilidad de baja satisfacción concentra una proporción importante de pedidos que finalmente reciben una calificación de 1 o 2 estrellas.
+
+| Indicador del modelo | Resultado | 
+|---|---|
+| Pedidos del conjunto de prueba | 32,006 
+| Pedidos ubicados en el top 10% de riesgo | 3,200
+| Pedidos con baja satisfacción dentro del top 10% | 1,137
+| Tasa de baja satisfacción en el top 10% | 35.5%
+| Casos de baja satisfacción capturados por el top 10% | 34.3%
+
+Supuesto del escenario
+
+Se propone que Olist use el modelo para identificar el 10% de pedidos con mayor riesgo y active un protocolo de intervención temprana que incluya:
+
+    1). Verificación del estado de envío.
+    2). Priorización del pedido con el operador logístico.
+    3). Comunicación proactiva y transparente al cliente.
+    4). Actualización de la fecha estimada de entrega.
+    5). Compensación comercial cuando el retraso ya no pueda evitarse.
+    6). Revisión de vendedor, ruta y categoría cuando se detecten patrones recurrentes.
+Sobre el total de 95,824 pedidos analizados, el 10% de mayor riesgo representaría aproximadamente: 9,582
+Si este grupo mantiene una tasa de baja satisfacción de 35.5%, se esperaría que concentre aproximadamente: 3,402
+Se asume que la intervención operativa logra recuperar el 25% de estos casos de riesgo: 851
+
+| Resultado esperado | Impacto | 
+|---|---|
+| Pedidos ubicados en zona de alto riesgo | 9,582
+| Casos esperados de baja satisfacción dentro de la zona de riesgo | 3,402
+| Casos potencialmente recuperados con intervención del 25% | 851
+| Malas reseñas de 1–2 estrellas potencialmente evitadas | 851
+| Mejora esperada | Menor cantidad de reclamos y mayor satisfacción en pedidos críticos
+
+Interpretación de negocio
+
+El modelo permite que Olist no tenga que intervenir todos los pedidos, sino que concentre recursos en aquellos con mayor probabilidad de generar una experiencia negativa.
+
+En lugar de revisar de manera uniforme los más de 95 mil pedidos, el equipo puede priorizar aproximadamente 9,582 pedidos de alto riesgo. Bajo el supuesto de una intervención efectiva en el 25% de los casos críticos, Olist podría recuperar aproximadamente 851 clientes que, de otra forma, tendrían alta probabilidad de dejar una calificación de 1 o 2 estrellas.
+
+No es posible calcular el efecto real sobre la recompra porque el dataset no contiene compras posteriores por cliente ni una variable de retención. Sin embargo, reducir las malas experiencias es una señal razonable de protección de la confianza del cliente y de mejora potencial de la relación futura con la plataforma.
 
 ### 6.2 Recomendaciones estratégicas
 
 Tres recomendaciones priorizadas por impacto, cada una trazada a un hallazgo del análisis:
 
-| # | Recomendación | Acción concreta | Responsable sugerido | Indicador de éxito | Hallazgo que la respalda |
+| # | Recomendación estratégica | Acción concreta | Responsable sugerido | Indicador de éxito | Hallazgo que la respalda |
 |---|---|---|---|---|---|
-| 1 | **Atacar la cola logística antes que el catálogo** | Auditar y rediseñar el proceso de los envíos que superan el umbral crítico de días; priorizar regiones/vendedores con más retrasos | Operaciones / Logística | Reducir el % de pedidos sobre el umbral crítico y subir el review_score promedio | Nivel 1 (máx 208 días) y Nivel 2 (H2, H3) |
-| 2 | **Implementar alerta temprana de insatisfacción** | Integrar el modelo predictivo (Nivel 3) para marcar pedidos en riesgo y activar seguimiento proactivo | Data / Customer Experience | Recall del modelo y % de clientes en riesgo recuperados | Nivel 3 (modelo H5) |
-| 3 | **No invertir en diferenciación por categoría para mejorar satisfacción** | Reorientar el presupuesto de mejora desde el catálogo hacia la operación y la comunicación de plazos realistas | Estrategia / Marketing | Mantener satisfacción con menor gasto en ajustes de catálogo | Nivel 1 y 2 (rating casi plano entre categorías) |
+| 1 | **Atacar la cola logística antes que el catálogo** | Crear una cola operativa para pedidos con más de 15 días; activar alerta naranja desde los 22 días y prioridad máxima desde los 30 días. Auditar vendedores, rutas y regiones que concentran entregas críticas. | Operaciones / Logística | Reducir el porcentaje de pedidos con más de 22 días; reducir las reseñas 1–2 estrellas en pedidos críticos; mejorar el review score promedio. | Nivel 1: tiempos extremos de hasta 208 días. Nivel 2: H2 y H3 muestran que la satisfacción cae de forma crítica después de 22 días. |
+| 2 | **Implementar alerta temprana de insatisfacción** | Aplicar el modelo predictivo diariamente; revisar primero el top 10% de pedidos con mayor riesgo; asignar responsable y acción correctiva en menos de 24 horas. | Data Analytics / Customer Experience / Operaciones | Recall@10%; porcentaje de pedidos de riesgo intervenidos; porcentaje de clientes de alto riesgo recuperados; reducción de malas reseñas. | Nivel 3: H5 confirma que existe un perfil de pedido con alta probabilidad de baja satisfacción. |
+| 3 | No priorizar el catálogo como principal palanca de satisfacción |Mantener mejoras de catálogo y surtido, pero reasignar la inversión principal hacia logística, comunicación proactiva y promesas de entrega realistas. Aplicar monitoreo por categoría solo para detectar categorías con alta sensibilidad a retrasos. | Estrategia / Marketplace / Marketing |Mantener o mejorar el rating promedio con menor gasto en ajustes generalizados de catálogo; reducción de reclamos logísticos. | Nivel 1 y Nivel 2: el rating promedio varía poco entre categorías, mientras que el tiempo de entrega presenta un efecto mucho mayor. |
 
+Recomendación 1: Gestión activa de la cola logística
+
+La principal prioridad de Olist debe ser reducir las entregas que superan los umbrales críticos. La evidencia muestra que el problema no está distribuido de forma uniforme: una proporción relativamente pequeña de pedidos con tiempos excesivos concentra una gran parte de las calificaciones negativas.
+
+Se recomienda implementar tres niveles de control:
+
+| Nivel | Condición | Acción |
+|---|---|---|
+| Preventivo | Entre 15 y 21 días | Revisar estado de envío y validar cumplimiento de fecha prometida.
+| Crítico | Entre 22 y 30 días | Escalar el pedido, informar al cliente y revisar transportista, vendedor y ruta.
+| Extremo | Más de 30 días | Prioridad máxima; intervención logística, compensación comercial y análisis de causa raíz.
+
+Recomendación 2: Modelo de riesgo como herramienta de priorización
+
+El modelo predictivo no debe reemplazar al equipo de operaciones ni decidir automáticamente qué cliente recibirá una compensación. Su función principal es priorizar.
+
+La lógica de uso sería:
+
+El modelo asigna una probabilidad de baja satisfacción a cada pedido.
+Olist selecciona el top 10% de pedidos con mayor riesgo.
+Operaciones revisa el estado real de los pedidos priorizados.
+Customer Experience contacta de manera preventiva a los clientes afectados.
+Se registra la acción tomada y se mide si la mala experiencia fue evitada.
+El resultado se incorpora como retroalimentación para mejorar el modelo.
+
+La meta no es eliminar todas las malas reseñas, sino reducir las que son prevenibles mediante intervención temprana
+
+Recomendación 3: Reorientar el presupuesto hacia la experiencia de entrega
+
+Los resultados muestran que las diferencias de satisfacción entre categorías son relativamente pequeñas, mientras que el tiempo de entrega tiene un efecto mucho más fuerte sobre la probabilidad de una mala calificación.
+
+Por ello, no se recomienda eliminar la inversión en catálogo, variedad o segmentación de productos. Sin embargo, estas acciones no deben ser la principal inversión destinada a mejorar la satisfacción.
+
+La prioridad debe ser:
+
+    1). Mejorar el cumplimiento de la promesa de entrega.
+    2). Ajustar fechas estimadas para que sean realistas.
+    3). Reducir retrasos en rutas y regiones críticas.
+    4). Gestionar vendedores con alto historial de demoras.
+    5). Comunicar de forma transparente cualquier cambio en el envío.
+    6). Ofrecer soluciones rápidas cuando el retraso no pueda evitarse.
+    
 ### 6.3 Trazabilidad dato → insight → decisión
 
+El proyecto sigue un hilo lógico desde los datos hasta la recomendación estratégica.
+
 El hilo argumental del proyecto es consistente: los datos muestran que **la categoría apenas mueve la satisfacción** y que **la entrega sí**, en especial sus casos extremos; el modelo confirma qué pedidos están en riesgo; y las recomendaciones redirigen la inversión hacia donde el dato indica que está el verdadero problema. Cada recomendación cita explícitamente el nivel de análisis que la sustenta.
+
+| Nivel de análisis | Dato observado | Insight obtenido | Decisión recomendada | 
+|---|---|---|---|
+| Nivel 1: Descriptivo | Existen pedidos con tiempos de entrega de hasta 208 días y una distribución con outliers logísticos. | La operación presenta una cola extrema de pedidos con desempeño anormal. | Monitorear la distribución completa y no solo el promedio de entrega. 
+| Nivel 2: Diagnóstico, H2 | La baja satisfacción aumenta desde los 15 días y se vuelve crítica después de 22 días. | El tiempo de entrega tiene un umbral operativo claro. | Crear alertas preventivas desde los 15 días y escalamiento crítico desde los 22 días. 
+| Nivel 2: Diagnóstico, H3 | Los pedidos con retrasos extremos concentran ratings mucho más bajos. | Los casos extremos tienen impacto desproporcionado en la experiencia del cliente. | Los casos extremos tienen impacto desproporcionado en la experiencia del cliente. | Crear una cola crítica y un protocolo especial para pedidos de más de 30 días. 
+|Nivel 2: Diagnóstico, H4 | Las diferencias de satisfacción entre categorías son menores que las diferencias explicadas por el tiempo de entrega. | La categoría influye, pero no es la principal causa de insatisfacción. | La categoría influye, pero no es la principal causa de insatisfacción. | No priorizar ajustes generalizados de catálogo como solución principal. 
+| Nivel 3: Predictivo, H5 | El modelo identifica una zona de alto riesgo donde la baja satisfacción es mucho mayor que en la población general. | Es posible anticipar pedidos con probabilidad elevada de recibir una mala reseña. | Integrar un sistema de alerta temprana y priorización de pedidos. 
+| Nivel 4: Prescriptivo | Los escenarios muestran que intervenir pedidos críticos puede evitar cientos de malas experiencias. | La inversión en logística y seguimiento proactivo tiene potencial de alto impacto. | Implementar piloto de intervención y medir resultados antes de escalar la solución. 
+
+Conclusión prescriptiva
+
+Los datos muestran que el principal problema de satisfacción no se explica por el precio ni por la categoría del producto, sino por los retrasos logísticos, especialmente aquellos que superan los 22 días.
+
+El modelo predictivo permite identificar qué pedidos tienen mayor riesgo de terminar con una baja calificación. A partir de ello, Olist puede intervenir antes de que el cliente deje una reseña negativa.
+
+La recomendación central es redirigir la inversión hacia una gestión preventiva de la experiencia logística: alertas tempranas, control de rutas críticas, seguimiento de vendedores, comunicación proactiva y protocolos para pedidos extremos.
+
+De esta manera, Olist pasa de una gestión reactiva, donde responde después de recibir una mala calificación, a una gestión prescriptiva basada en riesgo, priorización e intervención oportuna.
 
 ---
 
