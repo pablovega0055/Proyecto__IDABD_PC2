@@ -318,7 +318,7 @@ En Olist, **un producto triunfa menos por lo que es y más por cómo llega.** La
 
 | Semana | Camila Torres | Letizia Torres | Marcelo Villafuerte | Pablo Vega |
 |---|---|---|---|---|
-| 7 | Inició el EDA descriptivo (Nivel 1): estadísticas de precio, review y entrega. | Consolidó la base integrada en Databricks/Colab y verificó la unión de tablas. | Definió el enfoque del modelo predictivo y revisó las variables candidatas. | Estructuró el esqueleto del informe y la narrativa por niveles de analítica. |
+| 7 | Inició el EDA descriptivo (Nivel 1): estadísticas de precio, review y entrega. | Verificó la unión de tablas. | Definió el enfoque del modelo predictivo y revisó las variables candidatas. | Estructuró el esqueleto del informe y la narrativa por niveles de analítica. |
 | 8 | Generó las visualizaciones descriptivas (ventas por mes, categorías, estados, reviews). | Validó las hipótesis H2 y H3 con la comparación a tiempo vs. tardío. | Preparó la base de modelamiento (`pedidos_modelo`) y el tratamiento del desbalance. | Redactó las secciones de problema de negocio y descripción de datos. |
 | 9 | Cerró el EDA diagnóstico (Nivel 2): correlaciones y cruces entrega–satisfacción. | Apoyó la validación de H1 y H4 (precio y categoría) con evidencia del análisis. | Entrenó la regresión logística y obtuvo las métricas (AUC, accuracy, recall, F1). | Documentó los hallazgos descriptivos y diagnósticos en el informe. |
 | 10 | Revisó la coherencia de los gráficos del EDA con la narrativa del informe. | Integró el enriquecimiento (festivos, contexto comercial, tipo de cambio) en la base final. | Construyó la segmentación operativa de riesgo (alto vs. regular) y el umbral. | Integró los resultados del Nivel 1 y 2 al documento. |
