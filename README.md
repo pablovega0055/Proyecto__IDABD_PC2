@@ -8,17 +8,15 @@
 **Caso:** Caso 1 – Brazilian E-Commerce (Olist)
 **Entregable:** PC2 – Análisis Final, Dashboard y Presentación
 
-> **Nota para el equipo (borrar antes de entregar):** los bloques marcados con `[COMPLETAR: …]` deben reemplazarse con los resultados reales del notebook de la Etapa 2 (Databricks/Colab). No dejen ningún marcador en la versión final. El informe completo no debe superar las 15 páginas sin contar apéndices.
-
 ---
 
 ## Resumen ejecutivo
 
-Olist es un marketplace brasileño que conecta a pequeños vendedores con grandes canales de venta en línea. La pregunta de negocio que guía este proyecto es: **¿qué factores (precio, categoría, tiempo de entrega, calificación del vendedor) predicen mejor la satisfacción del cliente y la recompra?**
+Olist es un marketplace brasileño que conecta a pequeños vendedores con grandes canales de venta en línea. La pregunta que guía el proyecto es: **¿qué factores (precio, categoría, tiempo de entrega, calificación del vendedor) predicen mejor la satisfacción del cliente y la recompra?**
 
-Tras analizar más de 112 mil registros de pedidos reales (2016–2018), el hallazgo central es claro: **la satisfacción del cliente en Olist se explica mucho más por la operación logística que por el producto en sí**. El tiempo de entrega es la variable que muestra la relación más fuerte con la calificación, mientras que la categoría del producto y, en buena medida, el precio, tienen un efecto secundario. Un grupo minoritario de pedidos con retrasos extremos (hasta 208 días) concentra de forma desproporcionada las peores calificaciones y arrastra la percepción general del servicio.
+Tras integrar y analizar **114,092 registros** de pedidos reales (2016–2018), enriquecidos con calendario comercial y tipo de cambio, el hallazgo central es contundente: **la satisfacción del cliente en Olist se explica por la logística, no por el producto.** Un pedido entregado a tiempo obtiene en promedio **4.14 estrellas**; uno entregado tarde cae a **2.26**. La categoría del producto y el precio casi no mueven la aguja.
 
-A partir de estos hallazgos, el equipo propone tres recomendaciones estratégicas priorizadas que apuntan al verdadero cuello de botella —la entrega— antes que a ajustes de catálogo o precio. El detalle del modelado, los escenarios cuantificados y el dashboard ejecutivo se desarrollan en las secciones siguientes.
+A partir de ese hallazgo, el equipo construyó un **modelo predictivo** que estima la probabilidad de que un pedido llegue tarde (y por tanto reciba mala calificación), y un **análisis de escenarios** que cuantifica el impacto de intervenir los pedidos de mayor riesgo. El resultado se traduce en tres recomendaciones priorizadas que apuntan al verdadero cuello de botella —la entrega— antes que al catálogo o al precio.
 
 ---
 
@@ -26,7 +24,7 @@ A partir de estos hallazgos, el equipo propone tres recomendaciones estratégica
 
 ### 1.1 Contexto
 
-Olist es una plataforma brasileña de e-commerce que actúa como intermediario entre pequeños vendedores y los principales marketplaces del país. Su modelo depende de un equilibrio delicado: que el vendedor venda y que el cliente quede satisfecho para que vuelva a comprar. El problema es que **vender mucho no garantiza satisfacción ni recompra**. Muchos productos con alto volumen de ventas no logran sostener buenas calificaciones, y la empresa no tiene claridad sobre qué palanca mover primero para mejorar.
+Olist actúa como intermediario entre pequeños vendedores y los principales marketplaces de Brasil. Su modelo depende de un equilibrio: que el vendedor venda y que el cliente quede satisfecho para recomprar. El problema es que **vender mucho no garantiza satisfacción ni recompra**, y la empresa no sabe qué palanca mover primero para mejorar la experiencia.
 
 ### 1.2 Pregunta de negocio
 
@@ -34,7 +32,7 @@ Olist es una plataforma brasileña de e-commerce que actúa como intermediario e
 
 ### 1.3 Por qué importa
 
-Responder esta pregunta permite a Olist y a sus vendedores **pasar de decisiones basadas en intuición a decisiones basadas en datos**. Saber qué factor pesa más en la satisfacción significa poder priorizar la inversión: no tiene sentido optimizar el catálogo si el verdadero problema es la logística, ni bajar precios si el cliente insatisfecho lo está por una entrega tardía. Cada punto de mejora en la satisfacción se traduce, en un marketplace, en mayor recompra, mejor reputación y menor costo de adquisición de clientes.
+Responderla permite a Olist **priorizar inversión con evidencia**: no tiene sentido optimizar el catálogo si el problema es logístico, ni bajar precios si el cliente insatisfecho lo está por una entrega tardía. En un marketplace, cada punto de satisfacción se traduce en mayor recompra, mejor reputación y menor costo de adquisición.
 
 ---
 
@@ -42,48 +40,36 @@ Responder esta pregunta permite a Olist y a sus vendedores **pasar de decisiones
 
 ### 2.1 Fuente principal
 
-**Brazilian E-Commerce Public Dataset by Olist** (Kaggle: `olistbr/brazilian-ecommerce`). Período: **septiembre 2016 – octubre 2018**. El dataset reúne información real de pedidos, productos, clientes, vendedores, pagos, reseñas y logística.
+**Brazilian E-Commerce Public Dataset by Olist** (Kaggle: `olistbr/brazilian-ecommerce`). Período: **septiembre 2016 – octubre 2018**. Reúne información real de pedidos, productos, clientes, vendedores, pagos, reseñas y logística.
 
-| Tabla | Registros | Uso en el proyecto |
-|---|---|---|
-| `olist_orders_dataset.csv` | 99,441 | Fechas de compra, entrega y estado del pedido |
-| `olist_order_items_dataset.csv` | 112,650 | Precio, flete y producto vendido |
-| `olist_order_reviews_dataset.csv` | 104,719 | Satisfacción del cliente (`review_score` 1–5) |
-| `olist_customers_dataset.csv` | 99,441 | Cliente y ubicación |
-| `olist_products_dataset.csv` | 32,951 | Categoría y características del producto |
-| `olist_sellers_dataset.csv` | 3,095 | Localización del vendedor |
-| `olist_order_payments_dataset.csv` | 103,886 | Métodos y montos de pago |
+| Tabla | Uso en el proyecto |
+|---|---|
+| `olist_orders_dataset.csv` | Fechas de compra, entrega y estado del pedido |
+| `olist_order_items_dataset.csv` | Precio, flete y producto vendido |
+| `olist_order_reviews_dataset.csv` | Satisfacción del cliente (`review_score` 1–5) |
+| `olist_customers_dataset.csv` | Cliente y ubicación |
+| `olist_products_dataset.csv` | Categoría y características del producto |
+| `olist_order_payments_dataset.csv` | Métodos y montos de pago |
 
-**Variables clave:** `review_score`, `price`, `freight_value`, `order_status`, `order_purchase_timestamp`, `order_delivered_customer_date`, `order_estimated_delivery_date`, `product_category_name`, `payment_type`, `payment_installments`.
+### 2.2 Integración y enriquecimiento
 
-### 2.2 Integración de tablas
+Las tablas se unieron mediante `merge` en una base analítica de **114,092 filas y 51 columnas**. Sobre ella se construyeron variables derivadas de logística (`delivery_time`, `delivery_delay_days`, `is_late_delivery`), de contexto temporal y de conversión de moneda. El resultado se exportó como `olist_enriched_final.csv` (base usada en todo el análisis y el dashboard).
 
-Las tablas se unieron mediante operaciones de `merge` (por `customer_id`, `order_id`, `product_id`) en una sola base analítica de **112,372 registros y 32 columnas**, que relaciona en una misma fila el precio, el tiempo de entrega, la categoría del producto y la calificación del cliente. Sobre esta base se construyó la variable derivada `delivery_time` (días entre la compra y la entrega efectiva).
+**Enriquecimiento 1 – Calendario comercial y festivos de Brasil.** Permite ubicar cada compra en su contexto temporal:
 
-### 2.3 Fuente de enriquecimiento
+| Variable | Descripción |
+|---|---|
+| `purchase_month`, `purchase_day_of_week`, `is_weekend` | Estacionalidad y patrones por día |
+| `is_holiday`, `is_black_friday`, `is_christmas_period` | Marca compras en fechas comerciales clave |
+| `purchase_context` | Clasifica cada pedido en *Regular, Feriado, Navidad o Black Friday* |
 
-Como segunda fuente, el equipo incorporó un **calendario comercial y de festivos de Brasil (2016–2018)** para contextualizar cada compra en el tiempo. Esto permite evaluar si la estacionalidad y las campañas de alta demanda (Black Friday, Navidad) afectan la satisfacción a través de la saturación logística.
+Distribución de `purchase_context`: **Regular 105,223 · Navidad 5,521 · Feriado 1,958 · Black Friday 1,390**.
 
-| Variable nueva | Descripción | Utilidad |
-|---|---|---|
-| `purchase_month` | Mes de la compra | Estacionalidad mensual |
-| `purchase_day_of_week` | Día de la semana | Patrones de compra por día |
-| `is_holiday_period` | Compra cerca de un feriado | Impacto de feriados en demanda/entrega |
-| `is_black_friday_period` | Compra cerca de Black Friday | Campañas de alta demanda |
-| `is_christmas_period` | Compra cerca de Navidad | Saturación logística de fin de año |
+**Enriquecimiento 2 – Tipo de cambio BRL/PEN** (factor 0.70). Genera `price_pen`, `freight_value_pen` y `payment_value_pen` para interpretar los montos en soles (ej. la mediana de precio de 74.9 BRL ≈ **S/ 52**).
 
-Como fuente complementaria se usó el **tipo de cambio histórico BRL/PEN** para expresar los valores en soles y facilitar la interpretación económica desde el contexto peruano (`price_pen`, `freight_value_pen`, `total_value_pen`).
+### 2.3 Niveles de analítica aplicados
 
-> `[COMPLETAR: confirmar qué API/archivo se usó para los festivos (p. ej. Nager.Date) y para el tipo de cambio (BCRP), y cuántos registros del dataset quedaron efectivamente enriquecidos tras el merge.]`
-
-### 2.4 Niveles de analítica aplicados
-
-El análisis sigue los cuatro niveles progresivos del curso:
-
-1. **Descriptiva** — ¿qué pasó? (Sección 3)
-2. **Diagnóstica** — ¿por qué pasó? (Sección 4)
-3. **Predictiva** — ¿qué pasará? (Sección 5)
-4. **Prescriptiva** — ¿qué hacer? (Sección 6)
+El análisis cubre los cuatro niveles: **descriptiva** (¿qué pasó?), **diagnóstica** (¿por qué?), **predictiva** (¿qué pasará?) y **prescriptiva** (¿qué hacer?).
 
 ---
 
@@ -93,160 +79,223 @@ El análisis sigue los cuatro niveles progresivos del curso:
 
 | Variable | Media | Mediana | Desv. est. | Mín | P25 | P75 | Máx |
 |---|---|---|---|---|---|---|---|
-| `price` (BRL) | 120.38 | 74.90 | 182.15 | 0.85 | 39.90 | 134.90 | 6,735.00 |
-| `review_score` (1–5) | 4.03 | — | — | 1 | — | — | 5 |
-| `delivery_time` (días) | `[COMPLETAR: correr print(df['delivery_time'].mean())]` | — | — | — | — | — | 208 |
-
-> **Atención del equipo:** el valor `4.03` corresponde al promedio de `review_score`, **no** al de `delivery_time`. En la presentación de la PC1 se reportó "4 días" de entrega promedio por error; corran `df['delivery_time'].mean()` en una celda aparte y reemplacen el dato real (en datasets de Olist suele rondar los 12 días).
+| `price` (BRL) | 120.48 | 74.90 | 183.28 | 0.85 | 39.90 | 134.90 | 6,735.00 |
+| `review_score` (1–5) | 4.02 | 5 | 1.39 | 1 | — | — | 5 |
+| `delivery_time` (días) | **12.01** | 10 | — | 0 | — | — | 209 |
 
 **Lectura de negocio:**
 
-- **Precio:** la distribución está fuertemente sesgada a la derecha. El promedio (≈120 BRL) duplica a la mediana (≈75 BRL ≈ S/ 52), señal de que un puñado de productos premium muy caros —hasta 6,735 BRL ≈ S/ 4,713— inflan el promedio. El 75% del catálogo cuesta menos de 135 BRL: **es un mercado masivo de productos de precio bajo-medio**, donde el precio no es el gran diferenciador.
-- **Satisfacción:** con un promedio de 4.03 sobre 5, **la experiencia general es positiva**, pero ese promedio alto puede esconder bolsones de insatisfacción que el análisis diagnóstico debe destapar.
-- **Entrega:** la mayoría de pedidos llega en pocos días, pero existen **casos extremos de hasta 208 días**, una señal de fallas logísticas severas en una minoría de envíos.
+- **Precio:** distribución muy sesgada a la derecha. El promedio (≈120 BRL) duplica a la mediana (≈75 BRL), señal de un puñado de productos premium —hasta 6,735 BRL ≈ S/ 4,713— que inflan el promedio. El 75% del catálogo cuesta menos de 135 BRL: **es un mercado masivo de precio bajo-medio**.
+- **Satisfacción:** promedio de 4.02/5; **la experiencia general es positiva**, pero ese promedio esconde bolsones de insatisfacción que el nivel diagnóstico destapa.
+- **Entrega:** la mayoría de pedidos llega en ~10–12 días, pero existen **casos extremos de hasta 209 días**: fallas logísticas severas en una minoría de envíos.
+
+> **Corrección respecto a la PC1:** en la PC1 se reportó un tiempo de entrega promedio de "4 días". Ese valor era en realidad el promedio de `review_score` (4.02). El promedio real de entrega es **12 días** (mediana 10), corregido en este informe.
 
 ### 3.2 Visualizaciones descriptivas
 
-> Las visualizaciones se generan en el notebook `PF_Big_data.ipynb`. Cada una se acompaña de su conclusión en lenguaje de negocio.
+**Ventas en el tiempo.** Las ventas crecen de forma sostenida durante 2017 y se estabilizan en 2018. La caída abrupta al final corresponde a meses con datos incompletos, no a una baja real de demanda.
 
-**Viz 1 – Distribución de precios.** Histograma fuertemente sesgado: gran concentración en precios bajos y una cola larga de outliers. *Conclusión: el mercado de Olist es de alto volumen y precio bajo; los productos premium son una minoría que no representa al cliente típico.*
+![Ventas por mes](images/01_ventas_por_mes.png)
 
-**Viz 2 – Distribución de calificaciones.** Barras concentradas en 4 y 5 estrellas. *Conclusión: satisfacción general alta, pero con suficientes reseñas de 1 y 2 estrellas como para justificar un análisis del cliente insatisfecho.*
+**Categorías que generan más ingresos.** Las ventas se concentran en pocas categorías: `cama_mesa_banho`, `beleza_saude` e `informatica_acessorios` lideran. *Conclusión: demanda focalizada en un grupo reducido de categorías.*
 
-**Viz 3 – Distribución del tiempo de entrega.** Histograma concentrado en valores bajos con cola hacia los 208 días. *Conclusión: la operación promedio es razonable, pero la dispersión revela un problema de consistencia logística.*
+![Top 10 categorías por ventas](images/02_top_categorias.png)
 
-**Viz 4 – Tiempo de entrega vs. calificación (scatter).** A mayor tiempo de entrega, las calificaciones tienden a caer. *Conclusión: la rapidez de entrega es un factor crítico de la experiencia.*
+**Distribución de la satisfacción.** Fuerte concentración en 4 y 5 estrellas. *Conclusión: satisfacción general alta, pero con suficientes reseñas de 1–2 estrellas como para justificar el análisis del cliente insatisfecho.*
 
-**Viz 5 – Precio vs. calificación (scatter).** Relación débil; los productos baratos y caros reciben buenas y malas notas por igual. *Conclusión: el precio por sí solo no explica la satisfacción.*
+![Distribución de calificaciones](images/03_distribucion_reviews.png)
 
-**Viz 6 – Rating promedio por categoría vs. categorías más vendidas.** Las ventas se concentran en pocas categorías (`cama_mesa_banho`, `beleza_saude`, `esporte_lazer`…), pero el rating promedio entre categorías varía muy poco (todas alrededor de 3.9–4.1). *Conclusión: el tipo de producto casi no mueve la satisfacción; pesan más los factores operativos.*
+**Concentración geográfica.** São Paulo (SP) domina las ventas, seguido de Río de Janeiro (RJ) y Minas Gerais (MG). *Conclusión: el negocio depende fuertemente del sudeste de Brasil.*
+
+![Top estados por ventas](images/04_top_estados.png)
+
+**Contexto comercial de las compras.** La enorme mayoría de pedidos ocurre en contexto "Regular"; las fechas comerciales (Navidad, Feriado, Black Friday) son una fracción pequeña del volumen total.
+
+![Compras por contexto comercial](images/05_compras_contexto.png)
+
+**Distribución de precios y de tiempos de entrega.** Ambas variables muestran colas largas de outliers que conviene tratar con cuidado al interpretar promedios.
+
+![Distribución de precios](images/06_distribucion_precios.png)
+
+![Distribución del tiempo de entrega](images/07_distribucion_entrega.png)
 
 ### 3.3 Patrones identificados
 
-1. **Concentración de mercado en precios bajos** y en pocas categorías de alto volumen.
-2. **Alta satisfacción general** (4.03/5) con presencia de outliers logísticos.
-3. **Dispersión extrema en la entrega** (máximo de 208 días frente a un promedio de pocos días): el hallazgo más sorprendente del EDA, porque muestra que el problema no es el promedio sino la **cola de fallas**.
+1. **Mercado concentrado** en precios bajos, pocas categorías y el estado de São Paulo.
+2. **Alta satisfacción general** (4.02/5) con presencia de outliers logísticos.
+3. **Dispersión extrema en la entrega** (máximo de 209 días frente a una mediana de 10): el problema no está en el promedio, sino en la cola de fallas.
 
 ---
 
 ## 4. Nivel 2 – Analítica diagnóstica: ¿por qué pasó?
 
-### 4.1 Análisis de correlaciones
+### 4.1 La entrega tardía es el factor decisivo
 
-> `[COMPLETAR: insertar la matriz de correlación entre review_score, delivery_time, price, freight_value y las variables de enriquecimiento. Reportar el coeficiente de correlación de delivery_time vs review_score y de price vs review_score, e interpretar dirección e intensidad.]`
+La correlación entre tiempo de entrega y calificación es **negativa (≈ −0.30)**: a más días, menor nota. Pero el efecto se ve con total claridad al separar pedidos a tiempo de pedidos tardíos:
 
-**Lectura esperada (a confirmar con los números):** se anticipa una **correlación negativa** entre `delivery_time` y `review_score` (a más días, menor nota) y una correlación **débil o casi nula** entre `price` y `review_score`. Esto confirmaría que la variable que mejor explica la satisfacción es la logística, no el precio.
+| Estado de la entrega | Review promedio |
+|---|---|
+| **A tiempo** (`is_late_delivery = 0`) | **4.14** |
+| **Tardío** (`is_late_delivery = 1`) | **2.26** |
 
-### 4.2 Comparación de segmentos
+Una entrega tardía hace caer la satisfacción en **casi 1.9 estrellas**. El boxplot lo confirma: los pedidos a tiempo se concentran en 4–5 estrellas, mientras que los tardíos se desploman hacia 1–2.
 
-Comparación entre al menos dos grupos relevantes:
+![Impacto de la entrega tardía en la satisfacción](images/09_impacto_retraso.png)
 
-- **Entregas rápidas vs. entregas lentas:** `[COMPLETAR: % de reseñas de 4–5★ en pedidos entregados a tiempo vs. pedidos con retraso. Ej.: "Los pedidos entregados en menos de X días obtienen Y% de calificaciones altas, frente a Z% en los pedidos lentos".]`
-- **Pedidos a tiempo vs. pedidos con retraso respecto a la fecha estimada** (`order_delivered_customer_date` vs. `order_estimated_delivery_date`): `[COMPLETAR: comparar el review_score promedio de ambos grupos.]`
+Visto pedido a pedido, la relación es la misma tendencia: los tiempos de entrega largos arrastran las calificaciones hacia abajo.
 
-### 4.3 Validación de las hipótesis de la PC1
+![Tiempo de entrega vs. satisfacción](images/10_entrega_vs_satisfaccion.png)
 
-| Hipótesis | Pregunta | Resultado | Evidencia |
-|---|---|---|---|
-| **H1 – Precio óptimo** | ¿Hay un rango de precio intermedio que maximiza la satisfacción? | `[COMPLETAR: Validada / Refutada / Parcial]` | `[COMPLETAR: review_score promedio por tramos de precio (bajo/medio/alto).]` |
-| **H2 – Umbral crítico de entrega** | ¿A partir de cuántos días cae la satisfacción? | `[COMPLETAR]` | `[COMPLETAR: identificar el punto de quiebre, p. ej. review_score promedio por bins de delivery_time.]` |
-| **H3 – Retrasos extremos** | ¿Los outliers logísticos concentran las peores notas? | `[COMPLETAR]` | `[COMPLETAR: % de reseñas 1–2★ dentro de los pedidos con delivery_time atípico.]` |
-| **H4 – Sensibilidad por categoría** | ¿La tolerancia a la demora varía por categoría? | `[COMPLETAR]` | `[COMPLETAR: efecto del delivery_time sobre review_score segmentado por categoría.]` |
-| **H5 – Perfil del cliente insatisfecho** | ¿Se puede predecir baja satisfacción combinando variables? | `[COMPLETAR – se responde con el modelo de la Sección 5]` | `[COMPLETAR]` |
+### 4.2 El retraso concentra las peores notas
 
-**Diagnóstico preliminar:** la evidencia descriptiva ya apunta a que **H2 y H3 son las hipótesis con mayor respaldo** (la entrega y los retrasos extremos explican gran parte de las malas calificaciones), mientras que **H4 tiende a refutarse** parcialmente porque las diferencias de rating entre categorías son pequeñas. El equipo debe cerrar cada fila con la evidencia cuantitativa del notebook.
+Al cruzar el estado de la entrega con la distribución de calificaciones, el contraste es brutal:
+
+| Estado | 1★ | 2★ | 3★ | 4★ | 5★ |
+|---|---|---|---|---|---|
+| **A tiempo** | 10.3% | 3.1% | 8.2% | 19.5% | **58.9%** |
+| **Tardío** | **54.4%** | 8.5% | 10.6% | 10.0% | 16.5% |
+
+Más de la **mitad de los pedidos tardíos reciben 1 estrella**, frente al 10% en los pedidos a tiempo. La insatisfacción no está repartida: se concentra casi por completo en las entregas que fallan.
+
+### 4.3 El precio y el contexto comercial casi no afectan la satisfacción
+
+El ticket promedio apenas varía entre contextos comerciales (Black Friday 187 BRL, Regular 181, Navidad 169, Feriado 168), y las diferencias de rating entre categorías son mínimas. Esto refuerza que **el tipo de producto, el precio y la fecha no son los grandes determinantes de la satisfacción**: lo es la operación de entrega.
+
+![Ticket de compra por contexto comercial](images/08_ticket_por_contexto.png)
+
+### 4.4 Validación de las hipótesis de la PC1
+
+| Hipótesis | Resultado | Evidencia |
+|---|---|---|
+| **H1 – Precio óptimo** | **Refutada / débil** | El precio tiene relación casi nula con la satisfacción; no hay un rango "óptimo" claro. |
+| **H2 – Umbral crítico de entrega** | **Validada** | La satisfacción cae de 4.14 a 2.26 cuando la entrega pasa de "a tiempo" a "tardía". |
+| **H3 – Retrasos extremos** | **Validada** | El 54% de los pedidos tardíos recibe 1 estrella; la insatisfacción se concentra ahí. |
+| **H4 – Sensibilidad por categoría** | **Refutada / débil** | Las diferencias de rating entre categorías son pequeñas; domina el factor logístico. |
+| **H5 – Perfil del cliente insatisfecho** | **Validada (vía modelo)** | Se desarrolla en el Nivel 3: el retraso es el predictor central de la mala experiencia. |
 
 ---
 
 ## 5. Nivel 3 – Analítica predictiva: ¿qué pasará?
 
-> Esta sección responde principalmente a **H5 (perfil del cliente insatisfecho)**.
+### 5.1 Planteamiento
 
-### 5.1 Planteamiento del modelo
+Dado que la entrega tardía es el principal detonante de la insatisfacción (Nivel 2), el equipo entrenó un modelo que **predice la probabilidad de que un pedido se entregue tarde** (`is_late_delivery`). Anticipar el retraso equivale, en la práctica, a anticipar la mala calificación: es la traducción operativa de la hipótesis H5.
 
-Se entrena un modelo para **predecir la probabilidad de que un pedido reciba una calificación baja (1–2 estrellas)** a partir de las variables del pedido. La variable objetivo es binaria (`baja_satisfaccion = 1 si review_score ≤ 2`), y las predictoras incluyen `delivery_time`, `price`, `freight_value`, categoría y las variables de enriquecimiento temporal.
-
-> `[COMPLETAR: indicar el modelo finalmente usado (regresión logística, árbol de decisión, Random Forest o XGBoost), justificar la elección y describir el tratamiento del desbalance de clases —las reseñas 1–2★ son minoría—, por ejemplo con SMOTE o class_weight.]`
+- **Modelo:** Regresión logística con `class_weight='balanced'` (corrige el desbalance: solo el **6.77%** de los pedidos llegan tarde).
+- **Base de modelamiento:** 96,478 pedidos entregados.
+- **Variables predictoras:** `payment_value`, `payment_installments`, `price`, `freight_value`, `product_weight_g` (numéricas) y `purchase_context`, `purchase_month`, `is_weekend`, `is_holiday`, `is_black_friday`, `is_christmas_period`, `customer_state` (categóricas).
+- **Validación:** división 80/20 estratificada.
 
 ### 5.2 Métricas de desempeño
 
-> `[COMPLETAR: reportar las métricas reales del modelo e interpretarlas en lenguaje de negocio.]`
-
-| Métrica | Valor | Qué significa para el negocio |
+| Métrica | Valor | Lectura de negocio |
 |---|---|---|
-| Accuracy | `[COMPLETAR]` | `[COMPLETAR]` |
-| Precision (clase insatisfecho) | `[COMPLETAR]` | De cada 100 pedidos que el modelo marca como riesgo, cuántos lo son realmente |
-| Recall (clase insatisfecho) | `[COMPLETAR]` | De cada 100 clientes que se van a quejar, cuántos detectamos a tiempo |
-| F1 / AUC | `[COMPLETAR]` | Capacidad global de distinguir clientes satisfechos de insatisfechos |
+| ROC-AUC | **0.728** | Capacidad moderada-buena de distinguir un pedido que llegará tarde de uno que no. |
+| Accuracy | 0.837 | Alta, pero inflada por el desbalance (la mayoría llega a tiempo). |
+| Recall (tardíos) | 0.425 | Detecta ~42 de cada 100 retrasos reales: sirve como filtro de alerta temprana. |
+| Precision (tardíos) | 0.189 | De los pedidos marcados como riesgo, ~19% terminan siendo tardíos (genera falsos positivos). |
+| F1-score | 0.261 | Refleja el compromiso entre cobertura y precisión en un problema desbalanceado. |
 
-### 5.3 Interpretación de resultados
+![Curva ROC](images/11_curva_roc.png)
 
-> `[COMPLETAR: traducir la salida del modelo a negocio. Insertar el gráfico de feature importance y responder: ¿qué variable predice más la baja satisfacción? ¿cuántos pedidos del total caen en zona de riesgo? ¿qué magnitud tiene el efecto del tiempo de entrega?]`
+![Matriz de confusión](images/12_matriz_confusion.png)
 
-**Narrativa esperada (a confirmar):** se anticipa que el **tiempo de entrega será la variable más importante** del modelo, por encima del precio y la categoría, reforzando los hallazgos descriptivos y diagnósticos. Esto permitiría a Olist **anticipar qué pedidos en curso tienen alto riesgo de mala calificación** y actuar antes de que el cliente reseñe.
+**Interpretación honesta.** El modelo no es un predictor perfecto —su precisión es baja porque los retrasos son eventos raros y difíciles de anticipar solo con variables del pedido—, pero con un AUC de 0.73 **sí ordena bien el riesgo**. Eso es suficiente para su propósito real: **priorizar**. En lugar de vigilar 96 mil pedidos por igual, Olist puede concentrar recursos en el grupo de mayor probabilidad.
+
+### 5.3 Segmentación operativa del riesgo
+
+Fijando el umbral de alto riesgo en **0.631** (el 15% de mayor probabilidad), el modelo separa dos grupos muy distintos:
+
+| Nivel de riesgo | Pedidos | Probabilidad promedio | % tardíos reales |
+|---|---|---|---|
+| **Alto riesgo** | 14,472 | 0.73 | **18.3%** |
+| Riesgo regular | 82,006 | 0.38 | 4.7% |
+
+El grupo de alto riesgo concentra una tasa de retraso casi **4 veces mayor** que el resto: es exactamente donde conviene intervenir.
 
 ---
 
 ## 6. Nivel 4 – Analítica prescriptiva: ¿qué debe hacer Olist?
 
-### 6.1 Escenarios "¿qué pasaría si…?"
+### 6.1 El tamaño del problema, en cifras
 
-> `[COMPLETAR: cuantificar al menos 2 escenarios con supuestos explícitos, apoyados en los coeficientes del modelo o en los promedios por segmento.]`
+| Estado de la entrega | Pedidos | Review promedio | % reviews bajas (1–2★) |
+|---|---|---|---|
+| **Entrega tardía** | 6,381 | 2.27 | **62.4%** |
+| **Entrega a tiempo** | 89,451 | 4.29 | 9.3% |
 
-**Escenario A – Reducir la cola de retrasos extremos.**
-Supuesto: si Olist interviene los pedidos con `delivery_time` por encima del umbral crítico de H2 (los que hoy concentran las peores notas), reduciéndolos en un X%.
-Impacto estimado: `[COMPLETAR: proyección de incremento en el review_score promedio o en el % de reseñas 4–5★.]`
+Evitar un retraso mejora la calificación de ese pedido en ~**2.0 estrellas** y reduce su probabilidad de reseña baja en ~**53 puntos porcentuales**. Esa es la palanca que activan los escenarios.
 
-**Escenario B – Sistema de alerta temprana con el modelo predictivo.**
-Supuesto: si Olist usa el modelo de la Sección 5 para detectar el % de pedidos en riesgo y activa compensaciones o seguimiento proactivo.
-Impacto estimado: `[COMPLETAR: cuántos clientes insatisfechos se podrían recuperar y efecto esperado en recompra.]`
+### 6.2 Escenario A – Sistema de alerta temprana con el modelo
 
-### 6.2 Recomendaciones estratégicas
+**Supuesto:** Olist usa el modelo para vigilar los **14,336** pedidos de alto riesgo y, con seguimiento proactivo, evita el **30%** de los retrasos de ese grupo.
 
-Tres recomendaciones priorizadas por impacto, cada una trazada a un hallazgo del análisis:
+| Indicador | Resultado |
+|---|---|
+| Pedidos intervenidos | 14,336 |
+| Retrasos evitados estimados | ≈ 776 |
+| Reviews bajas evitadas estimadas | ≈ 412 |
+| Tasa de reviews bajas | 12.80% → **12.37%** |
+| Review promedio | 4.16 → 4.17 |
 
-| # | Recomendación | Acción concreta | Responsable sugerido | Indicador de éxito | Hallazgo que la respalda |
+El efecto sobre el promedio global es modesto (porque los retrasos son minoría), pero **recupera a cientos de clientes** que de otro modo habrían quedado insatisfechos.
+
+### 6.3 Escenario B – Intervenir el contexto comercial más crítico
+
+Al medir la tasa de retraso por contexto comercial aparece un patrón claro:
+
+| Contexto | Pedidos | % retrasos | Review promedio |
+|---|---|---|---|
+| **Black Friday** | 1,139 | **17.3%** | 3.78 |
+| Navidad | 4,698 | 8.1% | 4.07 |
+| Regular | 88,343 | 6.5% | 4.17 |
+| Feriado | 1,652 | 5.6% | 4.10 |
+
+**Black Friday es el contexto con mayor tasa de retraso y peor satisfacción.** El escenario plantea reducir un 25% de sus retrasos reforzando la logística en esa campaña.
+
+> **Matiz analítico:** aunque Black Friday tiene la *tasa* más alta, en *volumen absoluto* la mayoría de los retrasos ocurre en pedidos "Regular" (5,712 retrasos). Una estrategia completa debe atacar ambos: la campaña crítica por intensidad y la operación regular por volumen.
+
+### 6.4 Recomendaciones estratégicas
+
+| # | Recomendación | Acción concreta | Responsable | Indicador de éxito | Hallazgo que la respalda |
 |---|---|---|---|---|---|
-| 1 | **Atacar la cola logística antes que el catálogo** | Auditar y rediseñar el proceso de los envíos que superan el umbral crítico de días; priorizar regiones/vendedores con más retrasos | Operaciones / Logística | Reducir el % de pedidos sobre el umbral crítico y subir el review_score promedio | Nivel 1 (máx 208 días) y Nivel 2 (H2, H3) |
-| 2 | **Implementar alerta temprana de insatisfacción** | Integrar el modelo predictivo (Nivel 3) para marcar pedidos en riesgo y activar seguimiento proactivo | Data / Customer Experience | Recall del modelo y % de clientes en riesgo recuperados | Nivel 3 (modelo H5) |
-| 3 | **No invertir en diferenciación por categoría para mejorar satisfacción** | Reorientar el presupuesto de mejora desde el catálogo hacia la operación y la comunicación de plazos realistas | Estrategia / Marketing | Mantener satisfacción con menor gasto en ajustes de catálogo | Nivel 1 y 2 (rating casi plano entre categorías) |
+| 1 | **Atacar la entrega antes que el catálogo o el precio** | Auditar y rediseñar el proceso de los envíos en riesgo de retraso; priorizar SP y los vendedores con peor desempeño logístico | Operaciones / Logística | Reducir el % de pedidos tardíos y subir el review promedio | Nivel 2 (4.14 vs 2.26) y Nivel 4 (62% de reviews bajas en tardíos) |
+| 2 | **Implementar alerta temprana con el modelo** | Integrar el modelo predictivo para marcar el grupo de alto riesgo (14.3k pedidos) y activar seguimiento proactivo | Data / Customer Experience | Recall del modelo y nº de clientes en riesgo recuperados | Nivel 3 (alto riesgo 18.3% vs 4.7%) y Escenario A |
+| 3 | **Reforzar la logística en Black Friday y la operación regular** | Capacidad logística extra en campañas de alta demanda + mejora continua del grueso "Regular" | Estrategia / Operaciones | % de retrasos en Black Friday y en pedidos Regular | Nivel 4 (Black Friday 17.3% de retrasos; Regular concentra el volumen) |
 
-### 6.3 Trazabilidad dato → insight → decisión
+### 6.5 Trazabilidad dato → insight → decisión
 
-El hilo argumental del proyecto es consistente: los datos muestran que **la categoría apenas mueve la satisfacción** y que **la entrega sí**, en especial sus casos extremos; el modelo confirma qué pedidos están en riesgo; y las recomendaciones redirigen la inversión hacia donde el dato indica que está el verdadero problema. Cada recomendación cita explícitamente el nivel de análisis que la sustenta.
+El hilo es consistente: los datos muestran que **la categoría y el precio apenas mueven la satisfacción** y que **la entrega sí, sobre todo cuando falla**; el modelo identifica qué pedidos están en riesgo; los escenarios cuantifican el beneficio de intervenir; y las recomendaciones redirigen la inversión hacia donde el dato indica que está el problema. Cada recomendación cita explícitamente el nivel que la sustenta.
 
 ---
 
 ## 7. Dashboard ejecutivo
 
-**Link funcional:** `[COMPLETAR: enlace a Power BI / Looker Studio]`
+**Entregable:** archivo de Power BI `Version_Final_Dashboard.pbix` (incluido en el repositorio).
 
-El dashboard incluye un mínimo de cuatro visualizaciones interactivas, cada una titulada como una pregunta de negocio:
-
-1. **¿Cómo se distribuye la satisfacción de nuestros clientes?** — distribución de `review_score`.
-2. **¿Cuánto tarda realmente una entrega y cuándo se vuelve un problema?** — `delivery_time` vs. `review_score`.
-3. **¿Qué categorías venden más y cuáles satisfacen más?** — ventas y rating por categoría.
-4. **¿Dónde están los pedidos en riesgo?** — `[COMPLETAR: visual geográfica o de segmentos de riesgo según el modelo.]`
-
-> `[COMPLETAR: pegar capturas o describir brevemente cada visual final del dashboard.]`
+> **Pendiente del equipo:** publicar el `.pbix` en Power BI Service (*Publicar → obtener enlace*) y pegar aquí el **link funcional** para cumplir el requisito de la rúbrica. Verificar que el dashboard incluya al menos 4 visualizaciones interactivas, cada una titulada como una pregunta de negocio, por ejemplo:
+> 1. ¿Cómo se distribuye la satisfacción de nuestros clientes?
+> 2. ¿Cuánto afecta la entrega tardía a la calificación?
+> 3. ¿Qué estados y categorías concentran las ventas?
+> 4. ¿En qué contexto comercial se concentran los retrasos?
 
 ---
 
 ## 8. Limitaciones del análisis
 
-- **No se observa recompra real:** el dataset no tiene una variable explícita de retención, por lo que la "recompra" de la pregunta de negocio se aproxima de forma indirecta y debe interpretarse con cautela.
-- **Sesgo de satisfacción:** las calificaciones están muy concentradas en 4 y 5 estrellas, lo que genera desbalance de clases y obliga a técnicas específicas en el modelado.
-- **Variables externas ausentes:** el dataset no incluye promociones, stock, competencia ni campañas, factores que también influyen en la satisfacción.
-- **Outliers logísticos extremos:** los casos atípicos de entrega distorsionan promedios si no se tratan; se reportan tanto media como mediana para mitigarlo.
-- **Período histórico (2016–2018):** los patrones pueden haber cambiado; las conclusiones aplican al período analizado.
+- **No se observa recompra real:** el dataset no tiene una variable explícita de retención; la "recompra" de la pregunta de negocio se aproxima de forma indirecta y debe interpretarse con cautela.
+- **Sesgo de satisfacción:** las calificaciones se concentran en 4–5 estrellas, lo que genera desbalance de clases y obliga a técnicas específicas (`class_weight='balanced'`).
+- **Precisión del modelo:** el retraso es un evento raro y difícil de predecir solo con variables del pedido; el modelo sirve para priorizar, no para garantizar.
+- **Variables externas ausentes:** no hay datos de promociones, stock, competencia ni capacidad logística real.
+- **Período histórico (2016–2018) y meses incompletos:** los últimos meses tienen datos parciales; las conclusiones aplican al período analizado.
 
 ---
 
 ## 9. Conclusiones y próximos pasos
 
-El análisis confirma que, en Olist, **un producto "triunfa" menos por lo que es y más por cómo llega**. La logística —y en particular la consistencia de la entrega— es la palanca con mayor relación con la satisfacción, mientras que precio y categoría tienen un rol secundario. El cliente insatisfecho es, sobre todo, un cliente que esperó demasiado.
+En Olist, **un producto triunfa menos por lo que es y más por cómo llega.** La consistencia de la entrega es la variable con mayor relación con la satisfacción; el precio, la categoría y la fecha tienen un rol secundario. El cliente insatisfecho es, sobre todo, un cliente cuyo pedido llegó tarde.
 
-**Si el proyecto continuara**, los siguientes pasos serían: (1) construir una métrica proxy de recompra a partir de `customer_unique_id` para medir retención real; (2) incorporar datos de vendedores y regiones para localizar los focos de retraso; y (3) llevar el modelo predictivo a un sistema de alerta en tiempo real.
+**Si el proyecto continuara:** (1) construir una métrica proxy de recompra a partir de `customer_unique_id` para medir retención real; (2) incorporar datos de capacidad logística y de vendedores para localizar el origen de los retrasos; y (3) llevar el modelo a un sistema de alerta en tiempo real integrado al flujo operativo.
 
 ---
 
@@ -254,7 +303,7 @@ El análisis confirma que, en Olist, **un producto "triunfa" menos por lo que es
 
 | Semana | Camila Torres | Letizia Torres | Marcelo Villafuerte | Pablo Vega |
 |---|---|---|---|---|
-| 7 | `[COMPLETAR]` | `[COMPLETAR]` | `[COMPLETAR]` | `[COMPLETAR]` |
+| 7 | _(completar)_ | _(completar)_ | _(completar)_ | _(completar)_ |
 | 8 | … | … | … | … |
 | 9 | … | … | … | … |
 | 10 | … | … | … | … |
@@ -263,17 +312,17 @@ El análisis confirma que, en Olist, **un producto "triunfa" menos por lo que es
 | 13 | … | … | … | … |
 | 14 | … | … | … | … |
 
-> `[COMPLETAR: cada integrante describe brevemente su aporte semanal. Esta tabla es obligatoria según la Sección 7.4 del documento del curso.]`
+> _Cada integrante describe brevemente su aporte semanal (obligatorio según la Sección 7.4 del documento del curso)._
 
 ---
 
 ## Apéndice B – Uso de Inteligencia Artificial Generativa
 
-Durante la PC2 se utilizó IA generativa como apoyo para **estructurar y redactar el informe**, no para generar análisis ni resultados. Las decisiones analíticas, la carga e integración de datos, el modelado y las visualizaciones fueron realizadas por el equipo.
+Durante la PC2 se utilizó IA generativa como apoyo para **estructurar y redactar el informe** y para **organizar la presentación de resultados**, no para generar el análisis. La carga e integración de datos, el enriquecimiento, el modelado y las visualizaciones fueron desarrollados por el equipo en el notebook `pf_big_data.py` / `PF_Big_data.ipynb`. Todas las cifras de este informe provienen de la ejecución real de ese código sobre `olist_enriched_final.csv`.
 
-| Actividad | Herramienta | Prompt (resumen) | Validación realizada |
+| Actividad | Herramienta | Uso | Validación |
 |---|---|---|---|
-| Estructura y redacción del informe PC2 | `[COMPLETAR: ChatGPT / Claude]` | "Redactar el informe final PC2 integrando los 4 niveles de analítica para el caso Olist." | Se contrastó cada sección con la rúbrica y con los resultados reales del notebook; los marcadores `[COMPLETAR]` se llenaron con datos propios |
-| `[COMPLETAR: otras actividades con IA, p. ej. apoyo en código del modelo]` | `[COMPLETAR]` | `[COMPLETAR]` | `[COMPLETAR]` |
+| Redacción y estructura del informe PC2 | _(completar: ChatGPT / Claude)_ | Organizar secciones e integrar los 4 niveles de analítica | Cada cifra se contrastó con la salida del notebook |
+| _(completar otras, p. ej. apoyo en código del modelo)_ | _(completar)_ | _(completar)_ | _(completar)_ |
 
-> **Importante:** reemplacen todos los `[COMPLETAR]` por el uso real de IA. Declarar con precisión protege la nota; la rúbrica anula la evaluación si detecta un informe generado íntegramente por IA sin aporte del equipo.
+> _Reemplazar los "(completar)" por el uso real de IA. Declararlo con precisión protege la nota: la rúbrica anula la evaluación si detecta un informe generado íntegramente por IA sin aporte del equipo._
