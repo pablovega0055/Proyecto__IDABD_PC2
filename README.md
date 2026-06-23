@@ -95,29 +95,35 @@ El análisis cubre los cuatro niveles: **descriptiva** (¿qué pasó?), **diagn�
 
 **Ventas en el tiempo.** Las ventas crecen de forma sostenida durante 2017 y se estabilizan en 2018. La caída abrupta al final corresponde a meses con datos incompletos, no a una baja real de demanda.
 
-![Ventas por mes](images/01_ventas_por_mes.png)
+<img width="1275" height="493" alt="01_ventas_por_mes" src="https://github.com/user-attachments/assets/f46f5111-6353-421c-87f6-f37fe77a8f1d" />
+
 
 **Categorías que generan más ingresos.** Las ventas se concentran en pocas categorías: `cama_mesa_banho`, `beleza_saude` e `informatica_acessorios` lideran. *Conclusión: demanda focalizada en un grupo reducido de categorías.*
 
-![Top 10 categorías por ventas](images/02_top_categorias.png)
+<img width="1271" height="496" alt="02_top_categorias" src="https://github.com/user-attachments/assets/a41d3fbb-a277-46f3-88a4-84d98e8c74b0" />
+
 
 **Distribución de la satisfacción.** Fuerte concentración en 4 y 5 estrellas. *Conclusión: satisfacción general alta, pero con suficientes reseñas de 1–2 estrellas como para justificar el análisis del cliente insatisfecho.*
 
-![Distribución de calificaciones](images/03_distribucion_reviews.png)
+<img width="886" height="493" alt="03_distribucion_reviews" src="https://github.com/user-attachments/assets/42d697df-b984-45b5-914e-106f924d00fb" />
+
 
 **Concentración geográfica.** São Paulo (SP) domina las ventas, seguido de Río de Janeiro (RJ) y Minas Gerais (MG). *Conclusión: el negocio depende fuertemente del sudeste de Brasil.*
 
-![Top estados por ventas](images/04_top_estados.png)
+<img width="1146" height="493" alt="04_top_estados" src="https://github.com/user-attachments/assets/c15b032a-3cbb-4ee1-a5b3-7c8980b39d8d" />
+
 
 **Contexto comercial de las compras.** La enorme mayoría de pedidos ocurre en contexto "Regular"; las fechas comerciales (Navidad, Feriado, Black Friday) son una fracción pequeña del volumen total.
 
-![Compras por contexto comercial](images/05_compras_contexto.png)
+<img width="886" height="493" alt="05_compras_contexto" src="https://github.com/user-attachments/assets/01aa9c28-86be-4f5f-8c8d-53dff2261bfc" />
+
 
 **Distribución de precios y de tiempos de entrega.** Ambas variables muestran colas largas de outliers que conviene tratar con cuidado al interpretar promedios.
 
-![Distribución de precios](images/06_distribucion_precios.png)
+<img width="1016" height="493" alt="06_distribucion_precios" src="https://github.com/user-attachments/assets/636a2964-ad18-4865-91ac-ff7ee1e72c99" />
 
-![Distribución del tiempo de entrega](images/07_distribucion_entrega.png)
+
+<img width="1016" height="493" alt="07_distribucion_entrega" src="https://github.com/user-attachments/assets/2a1c6272-2ddc-4070-82e3-3c461767701c" />
 
 ### 3.3 Patrones identificados
 
@@ -140,11 +146,13 @@ La correlación entre tiempo de entrega y calificación es **negativa (≈ −0.
 
 Una entrega tardía hace caer la satisfacción en **casi 1.9 estrellas**. El boxplot lo confirma: los pedidos a tiempo se concentran en 4–5 estrellas, mientras que los tardíos se desploman hacia 1–2.
 
-![Impacto de la entrega tardía en la satisfacción](images/09_impacto_retraso.png)
+<img width="1016" height="493" alt="08_ticket_por_contexto_1" src="https://github.com/user-attachments/assets/5bb10137-60d9-4e72-a0b0-2542287a2f9a" />
+
 
 Visto pedido a pedido, la relación es la misma tendencia: los tiempos de entrega largos arrastran las calificaciones hacia abajo.
 
-![Tiempo de entrega vs. satisfacción](images/10_entrega_vs_satisfaccion.png)
+<img width="1015" height="494" alt="10_entrega_vs_satisfaccion" src="https://github.com/user-attachments/assets/92ff6baf-1ef9-41b6-9732-bbe3d8e72936" />
+
 
 ### 4.2 El retraso concentra las peores notas
 
@@ -161,7 +169,8 @@ Más de la **mitad de los pedidos tardíos reciben 1 estrella**, frente al 10% e
 
 El ticket promedio apenas varía entre contextos comerciales (Black Friday 187 BRL, Regular 181, Navidad 169, Feriado 168), y las diferencias de rating entre categorías son mínimas. Esto refuerza que **el tipo de producto, el precio y la fecha no son los grandes determinantes de la satisfacción**: lo es la operación de entrega.
 
-![Ticket de compra por contexto comercial](images/08_ticket_por_contexto.png)
+<img width="1016" height="493" alt="08_ticket_por_contexto_2" src="https://github.com/user-attachments/assets/3ce6c985-e099-4a80-928f-6622dd32f4b4" />
+
 
 ### 4.4 Validación de las hipótesis de la PC1
 
@@ -196,9 +205,10 @@ Dado que la entrega tardía es el principal detonante de la insatisfacción (Niv
 | Precision (tardíos) | 0.189 | De los pedidos marcados como riesgo, ~19% terminan siendo tardíos (genera falsos positivos). |
 | F1-score | 0.261 | Refleja el compromiso entre cobertura y precisión en un problema desbalanceado. |
 
-![Curva ROC](images/11_curva_roc.png)
+<img width="593" height="597" alt="11_curva_roc" src="https://github.com/user-attachments/assets/1c9cfd12-2d61-4228-9dee-f64ef62d5ef9" />
 
-![Matriz de confusión](images/12_matriz_confusion.png)
+<img width="628" height="496" alt="12_matriz_confusion" src="https://github.com/user-attachments/assets/7de3386d-df82-4ef9-958e-426e2608228e" />
+
 
 **Interpretación honesta.** El modelo no es un predictor perfecto —su precisión es baja porque los retrasos son eventos raros y difíciles de anticipar solo con variables del pedido—, pero con un AUC de 0.73 **sí ordena bien el riesgo**. Eso es suficiente para su propósito real: **priorizar**. En lugar de vigilar 96 mil pedidos por igual, Olist puede concentrar recursos en el grupo de mayor probabilidad.
 
