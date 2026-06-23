@@ -151,7 +151,8 @@ Una entrega tardía hace caer la satisfacción en **casi 1.9 estrellas**. El box
 
 Visto pedido a pedido, la relación es la misma tendencia: los tiempos de entrega largos arrastran las calificaciones hacia abajo.
 
-<img width="1015" height="494" alt="10_entrega_vs_satisfaccion" src="https://github.com/user-attachments/assets/92ff6baf-1ef9-41b6-9732-bbe3d8e72936" />
+<img width="885" height="494" alt="09_impacto_retraso" src="https://github.com/user-attachments/assets/a4128764-1c4f-47de-b6b5-45381b090a0b" />
+
 
 
 ### 4.2 El retraso concentra las peores notas
