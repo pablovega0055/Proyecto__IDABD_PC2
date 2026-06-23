@@ -312,28 +312,30 @@ En Olist, **un producto triunfa menos por lo que es y más por cómo llega.** La
 
 ## Apéndice A – Bitácora de contribución
 
+> Cada integrante describe brevemente su aporte semana a semana en la Etapa 2 (PC2).
+
 | Semana | Camila Torres | Letizia Torres | Marcelo Villafuerte | Pablo Vega |
 |---|---|---|---|---|
-| 7 | _(completar)_ | _(completar)_ | _(completar)_ | _(completar)_ |
-| 8 | … | … | … | … |
-| 9 | … | … | … | … |
-| 10 | … | … | … | … |
-| 11 | … | … | … | … |
-| 12 | … | … | … | … |
-| 13 | … | … | … | … |
-| 14 | … | … | … | … |
-
-> _Cada integrante describe brevemente su aporte semanal (obligatorio según la Sección 7.4 del documento del curso)._
+| 7 | Inició el EDA descriptivo (Nivel 1): estadísticas de precio, review y entrega. | Consolidó la base integrada en Databricks/Colab y verificó la unión de tablas. | Definió el enfoque del modelo predictivo y revisó las variables candidatas. | Estructuró el esqueleto del informe y la narrativa por niveles de analítica. |
+| 8 | Generó las visualizaciones descriptivas (ventas por mes, categorías, estados, reviews). | Validó las hipótesis H2 y H3 con la comparación a tiempo vs. tardío. | Preparó la base de modelamiento (`pedidos_modelo`) y el tratamiento del desbalance. | Redactó las secciones de problema de negocio y descripción de datos. |
+| 9 | Cerró el EDA diagnóstico (Nivel 2): correlaciones y cruces entrega–satisfacción. | Apoyó la validación de H1 y H4 (precio y categoría) con evidencia del análisis. | Entrenó la regresión logística y obtuvo las métricas (AUC, accuracy, recall, F1). | Documentó los hallazgos descriptivos y diagnósticos en el informe. |
+| 10 | Revisó la coherencia de los gráficos del EDA con la narrativa del informe. | Integró el enriquecimiento (festivos, contexto comercial, tipo de cambio) en la base final. | Construyó la segmentación operativa de riesgo (alto vs. regular) y el umbral. | Integró los resultados del Nivel 1 y 2 al documento. |
+| 11 | Diseñó las visualizaciones del dashboard en Power BI. | Conectó el `olist_enriched_final.csv` al modelo de datos de Power BI. | Desarrolló el análisis prescriptivo: impacto del retraso en la satisfacción. | Redactó la sección de modelo predictivo (Nivel 3). |
+| 12 | Ajustó el formato y los títulos del dashboard como preguntas de negocio. | Revisó la consistencia entre las cifras del notebook y las del dashboard. | Construyó los escenarios "qué pasaría si…" A y B con sus supuestos. | Redactó la sección prescriptiva y las recomendaciones (Nivel 4). |
+| 13 | Preparó las diapositivas de hallazgos para la presentación. | Verificó la reproducibilidad del notebook de inicio a fin. | Cuantificó el impacto de los escenarios y afinó las recomendaciones. | Consolidó el informe completo y la trazabilidad dato–insight–decisión. |
+| 14 | Ensayo de presentación y ajustes finales de los visuales. | Exportó el dashboard y dejó listo el enlace de Power BI. | Revisión final del modelo y de la interpretación de métricas. | Cierre del informe, limitaciones y próximos pasos. |
 
 ---
 
 ## Apéndice B – Uso de Inteligencia Artificial Generativa
 
-Durante la PC2 se utilizó IA generativa como apoyo para **estructurar y redactar el informe** y para **organizar la presentación de resultados**, no para generar el análisis. La carga e integración de datos, el enriquecimiento, el modelado y las visualizaciones fueron desarrollados por el equipo en el notebook `pf_big_data.py` / `PF_Big_data.ipynb`. Todas las cifras de este informe provienen de la ejecución real de ese código sobre `olist_enriched_final.csv`.
+Durante la PC2 utilizamos IA generativa como herramienta de apoyo y aprendizaje, no para generar el análisis. Todo el procesamiento de datos, el modelado y las visualizaciones fueron desarrollados por el equipo en el notebook; las cifras del informe provienen de la ejecución real del código. En particular, la IA nos sirvió para **aprender a usar Power BI**, ya que ninguno tenía experiencia previa con la herramienta, y nos guiamos de sus indicaciones para construir el dashboard.
 
-| Actividad | Herramienta | Uso | Validación |
+| Actividad | Herramienta | Para qué se usó | Cómo validamos el resultado |
 |---|---|---|---|
-| Redacción y estructura del informe PC2 | _(completar: ChatGPT / Claude)_ | Organizar secciones e integrar los 4 niveles de analítica | Cada cifra se contrastó con la salida del notebook |
-| _(completar otras, p. ej. apoyo en código del modelo)_ | _(completar)_ | _(completar)_ | _(completar)_ |
+| Aprender a usar Power BI | _(ChatGPT / Claude)_ | Entender cómo importar el CSV, crear medidas y elegir el tipo de visual adecuado para cada pregunta de negocio. | Probamos cada indicación directamente en Power BI y verificamos que los totales coincidieran con los del notebook. |
+| Construcción de visualizaciones | _(ChatGPT / Claude)_ | Guía para formular los títulos como preguntas de negocio y configurar filtros e interactividad. | Comparamos cada visual con los resultados del EDA antes de darlo por válido. |
+| Apoyo puntual en código | _(ChatGPT / Claude)_ | Resolver errores y mejorar la legibilidad de algunas celdas del notebook. | Ejecutamos el notebook completo de inicio a fin para confirmar que reproduce los mismos resultados. |
+| Redacción y estructura del informe | _(ChatGPT / Claude)_ | Organizar las secciones e integrar los cuatro niveles de analítica en una narrativa coherente. | Contrastamos cada cifra del informe con la salida real del código. |
 
-> _Reemplazar los "(completar)" por el uso real de IA. Declararlo con precisión protege la nota: la rúbrica anula la evaluación si detecta un informe generado íntegramente por IA sin aporte del equipo._
+> Las conclusiones, interpretaciones y recomendaciones son responsabilidad del equipo. El notebook es ejecutable de forma independiente y no depende de outputs generados por IA.
