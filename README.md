@@ -1,5 +1,6 @@
 # Informe Final – PC2
 *Presentación PPT* 'https://canva.link/i275c4q49nw2ilr'
+
 *PowerBi* 'https://app.powerbi.com/groups/me/reports/f4427752-80bf-4964-97f2-cc6eeb11b9b3?ctid=c6259f2e-86a0-426b-95e0-6ce33cae175f&pbi_source=linkShare'
 ## ¿Qué hace que un producto triunfe en e-commerce?
 ### MarketPulse Analytics – Análisis de Satisfacción del Cliente (Olist)
