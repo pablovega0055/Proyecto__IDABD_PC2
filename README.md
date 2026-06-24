@@ -284,13 +284,7 @@ El hilo es consistente: los datos muestran que **la categoría y el precio apena
 
 ## 7. Dashboard ejecutivo
 
-**Entregable:** archivo de Power BI `Version_Final_Dashboard.pbix` (incluido en el repositorio).
-
-> **Pendiente del equipo:** publicar el `.pbix` en Power BI Service (*Publicar → obtener enlace*) y pegar aquí el **link funcional** para cumplir el requisito de la rúbrica. Verificar que el dashboard incluya al menos 4 visualizaciones interactivas, cada una titulada como una pregunta de negocio, por ejemplo:
-> 1. ¿Cómo se distribuye la satisfacción de nuestros clientes?
-> 2. ¿Cuánto afecta la entrega tardía a la calificación?
-> 3. ¿Qué estados y categorías concentran las ventas?
-> 4. ¿En qué contexto comercial se concentran los retrasos?
+**Entregable:** archivo de Power BI *PowerBi* 'https://app.powerbi.com/groups/me/reports/f4427752-80bf-4964-97f2-cc6eeb11b9b3?ctid=c6259f2e-86a0-426b-95e0-6ce33cae175f&pbi_source=linkShare'
 
 ---
 
